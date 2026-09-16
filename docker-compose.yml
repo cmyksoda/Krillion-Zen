@@ -1,0 +1,9 @@
+services:
+  krillion:
+    container_name: krillion
+    build: .
+    ports:
+      - "3030:3030"
+    volumes:
+      - ./users.db:/app/users.db
+    restart: unless-stopped
