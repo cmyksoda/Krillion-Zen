@@ -41,8 +41,4 @@ docker compose up -d --build
 
 ## Hosting Advisory
 
-<<<<<<< HEAD
-Keep the running instance on localhost/LAN/tailscale. Do **not** put it on a public URL. Krillion's site is copyrighted and is not free to redistribute.
-=======
 Keep the running instance on localhost/LAN/tailscale. Do ***not*** put it on a public URL. Krillion's site is copyrighted and is not free to redistribute.
->>>>>>> aea7cccf134afa8548896547ce74184ef47ff88c
