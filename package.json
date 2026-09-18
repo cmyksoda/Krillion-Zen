@@ -20,7 +20,6 @@
   "homepage": "https://github.com/WaterJason/krillion#readme",
   "dependencies": {
     "express": "^5.2.1",
-    "http-proxy-middleware": "^4.2.0",
     "sqlite3": "^6.0.1"
   }
 }
