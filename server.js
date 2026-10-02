@@ -11,6 +11,7 @@ app.use((req, res, next) => {
   console.log(`[${req.method}] ${req.url}`);
   next();
 });
+
 db.serialize(() => {
   db.run("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, data TEXT)");
 });
@@ -22,29 +23,42 @@ app.post('/local-api/login', (req, res) => {
   const { username, data } = req.body;
   if (!username) return res.status(400).json({ error: "Missing username" });
 
-  db.get("SELECT data, username as storedUsername FROM users WHERE LOWER(username) = LOWER(?)", [username], (err, row) => {
-    if (err) return res.status(500).json({ error: "DB Error" });
-    
-    if (row) {
-      // User exists, return their data
-      res.json({ data: JSON.parse(row.data), casedUsername: row.storedUsername });
-    } else {
-      // New user, save their current local storage data
-      db.run("INSERT INTO users (username, data) VALUES (?, ?)", [username, JSON.stringify(data || {})], (err) => {
-        if (err) return res.status(500).json({ error: "DB Error" });
-        res.json({ data: data || {}, casedUsername: username });
-      });
+  db.get(
+    "SELECT data, username as storedUsername FROM users WHERE LOWER(username) = LOWER(?)",
+    [username],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: "DB Error" });
+
+      if (row) {
+        // User exists, return their data
+        res.json({ data: JSON.parse(row.data), casedUsername: row.storedUsername });
+      } else {
+        // New user, save their current local storage data
+        db.run(
+          "INSERT INTO users (username, data) VALUES (?, ?)",
+          [username, JSON.stringify(data || {})],
+          (err) => {
+            if (err) return res.status(500).json({ error: "DB Error" });
+            res.json({ data: data || {}, casedUsername: username });
+          }
+        );
+      }
     }
-  });
+  );
 });
 
 app.post("/local-api/sync", (req, res) => {
   const { username, data } = req.body;
   if (!username) return res.status(400).json({ error: "Missing username" });
-  db.run("UPDATE users SET data = ? WHERE LOWER(username) = LOWER(?)", [JSON.stringify(data || {}), username], (err) => {
-    if (err) return res.status(500).json({ error: "DB Error" });
-    res.json({ success: true });
-  });
+
+  db.run(
+    "UPDATE users SET data = ? WHERE LOWER(username) = LOWER(?)",
+    [JSON.stringify(data || {}), username],
+    (err) => {
+      if (err) return res.status(500).json({ error: "DB Error" });
+      res.json({ success: true });
+    }
+  );
 });
 
 app.use(["/packs", "/unlimited", "/movies", "/sports", "/geography", "/lexicon"], (req, res) => {
@@ -88,12 +102,12 @@ app.use('/api', (req, res) => {
 
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     if (req.body && Object.keys(req.body).length > 0) {
-        const bodyData = JSON.stringify(req.body);
-        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-        proxyReq.write(bodyData);
+      const bodyData = JSON.stringify(req.body);
+      proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+      proxyReq.write(bodyData);
     } else {
-        req.pipe(proxyReq);
-        return;
+      req.pipe(proxyReq);
+      return;
     }
     proxyReq.end();
   } else {
@@ -101,17 +115,19 @@ app.use('/api', (req, res) => {
   }
 });
 
-
 app.get('/leaderboard', (req, res) => {
-  let accountHtml = fs.readFileSync(path.join(__dirname, 'krillion-mirror/krillion.io/account.html'), 'utf8');
-  
+  let accountHtml = fs.readFileSync(
+    path.join(__dirname, 'krillion-mirror/krillion.io/account.html'),
+    'utf8'
+  );
+
   db.all("SELECT username, data FROM users", [], (err, rows) => {
     if (err) return res.status(500).send("DB Error");
-    
+
     let allUsers = [];
     let maxDay = 0;
     let maxDateStr = null;
-    
+
     rows.forEach(row => {
       if (row.data) {
         try {
@@ -123,17 +139,20 @@ app.get('/leaderboard', (req, res) => {
           let bestScore = 0;
           let bestDay = null;
           let bestDate = null;
-          
+
           for (const date in history) {
             let dayData = history[date];
-            if (dayData.dayNumber > maxDay) { maxDay = dayData.dayNumber; maxDateStr = date; }
+            if (dayData.dayNumber > maxDay) {
+              maxDay = dayData.dayNumber;
+              maxDateStr = date;
+            }
             if (dayData.score > bestScore) {
               bestScore = dayData.score;
               bestDay = dayData;
               bestDate = date;
             }
           }
-          
+
           if (bestDay) {
             bestDay.dateStr = bestDate;
           }
@@ -147,7 +166,7 @@ app.get('/leaderboard', (req, res) => {
         } catch(e) {}
       }
     });
-    
+
     allUsers.forEach(u => {
       u.todayDay = maxDateStr ? (u.history[maxDateStr] || null) : null;
       if (u.todayDay) u.todayDay.dateStr = maxDateStr;
@@ -325,7 +344,6 @@ app.get('/leaderboard', (req, res) => {
 
     staticHtml = staticHtml.replace('</body>', customUI + '</body>');
 
-    
     const styles = `
       <style>
         .tab-btn {

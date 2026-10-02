@@ -13,6 +13,7 @@ function collectChunkRefs(text, set) {
 
 function fetchMissingChunks() {
     if (!fs.existsSync(chunksDir)) return;
+
     const dplMatch = (function() {
         try {
             const html = fs.readFileSync(path.join(baseDir, 'index.html'), 'utf8');
@@ -34,12 +35,17 @@ function fetchMissingChunks() {
             }
         }
         walk(baseDir);
+
         let fetched = 0;
         for (const f of refs) {
             const dest = path.join(chunksDir, f);
             if (fs.existsSync(dest)) continue;
             try {
-                execFileSync('curl', ['-fsSL', `https://krillion.io/_next/static/chunks/${f}${q}`, '-o', dest], { timeout: 30000 });
+                execFileSync(
+                    'curl',
+                    ['-fsSL', `https://krillion.io/_next/static/chunks/${f}${q}`, '-o', dest],
+                    { timeout: 30000 }
+                );
                 console.log('Fetched missing chunk: ' + f);
                 fetched++;
             } catch (e) {
@@ -55,26 +61,26 @@ function processChunks() {
         console.error("Chunks directory not found: " + chunksDir);
         return;
     }
-    
+
     fs.readdirSync(chunksDir).forEach(f => {
         if (!f.includes('.js')) return;
         let c = fs.readFileSync(path.join(chunksDir, f), 'utf8');
         let originalC = c;
-        
+
         // 1. Menu replacements
         const oldMenu = `let c=[{href:"/",label:"Daily dive",icon:"daily"},{href:"/unlimited/classic",label:"Unlimited",icon:"unlimited"},{href:"/archive",label:"Archive",icon:"archive"},{href:"/packs",label:"Themed packs",icon:"packs"},{href:"/account",label:"My Krillion",icon:"account"},{href:"/friends",label:"Friends",icon:"friends"}];`;
         const newMenu = `let c=[{href:"/",label:"Daily dive",icon:"daily"},{href:"/leaderboard",label:"Leaderboard",icon:"friends"},{href:"/account",label:"Account",icon:"account"}];`;
         c = c.replace(oldMenu, newMenu);
-        
+
         // 2. Remove FAQ
         const faqJSX = `,(0,t.jsxs)(n.default,{href:"/faq",prefetch:!1,onNavigate:()=>b("/faq"),"aria-current":"/faq"===v?"page":void 0,children:[(0,t.jsx)(d,{name:"faq"}),(0,t.jsx)("span",{children:"FAQ"})]})`;
         c = c.replace(faqJSX, '');
-        
+
         // 3. Remove "Unlock the depths" premium footer
         const oldLockHtml = `className:"ds-boot-title",children:e.lockTitle}),e.payUrl?(0,t.jsx)("a",{href:e.payUrl,className:"ds-next-btn",children:e.lockCta})`;
         const newLockHtml = `className:"ds-boot-title",children:e.lockTitle}),e.payUrl?null`;
         c = c.replace(oldLockHtml, newLockHtml);
-        
+
         // 4. Remove footer links
         if (c.includes('found a bug? lost an unlock?')) {
             c = c.replace(/found a bug\? lost an unlock\?/g, '');
