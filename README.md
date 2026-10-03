@@ -42,3 +42,7 @@ docker compose up -d --build
 ## Hosting Advisory
 
 Keep the running instance on localhost/LAN/tailscale. Do ***not*** put it on a public URL. Krillion's site is copyrighted and is not free to redistribute.
+
+---
+
+*This project was made with AI assistance. For more information, see [my AI usage statement](https://github.com/cmyksoda/cmyksoda/blob/main/AI_USAGE.md).*
